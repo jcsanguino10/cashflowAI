@@ -2,15 +2,15 @@
 
 ## Project state
 
-Phases 0–1 complete: only `src/config.py` and `src/middleware_client.py` exist. The following files are **not yet implemented** and need to be created:
-- `src/tools.py`, `src/multimodal.py`, `src/agent.py`, `src/bot.py`, `src/main.py`
+Phases 0–2 complete: `src/config.py`, `src/middleware_client.py`, and `src/tools.py` exist. The following files are **not yet implemented**:
+- `src/multimodal.py`, `src/agent.py`, `src/bot.py`, `src/main.py`
 
 Run: `python -m src.main` (module, not script — all intra-package imports use `from src.xxx`).
 
 ## Critical conventions
 
 - **All amounts are integers in cents** (€12.99 = 1299). Use `euros_to_cents` / `cents_to_euros` from `middleware_client.py` at boundaries.
-- **Config** (`src/config.py`): pydantic-settings with `case_sensitive=False`. Env file `.env`. Singleton `config = Config()` at module level — import via `from src.config import config`.
+- **Config** (`src/config.py`): pydantic-settings with `SettingsConfigDict(extra="ignore", case_sensitive=False)`. Env file `.env`. Singleton `config = Config()` at module level — import via `from src.config import config`.
 - **`BUDGET_SYNC_ID`** is required (Actual Budget Sync ID, not server password).
 - **All middleware client methods are async** (`httpx.AsyncClient`). The agent runs in an async event loop.
 - **`_transaction_to_dict`** omits `None` fields — never pass dataclass defaults as explicit `None` (they are intentionally absent).
@@ -24,7 +24,13 @@ See `ARCHITECTURE.md` for the full design. `TASKS.md` tracks pending implementat
 
 ## Tests / lint / format / typecheck
 
-No task requiered
+Tests are run inside a Docker container:
+
+```bash
+docker build -f Dockerfile.test -t app-test . && docker run --rm app-test
+```
+
+No lint / format / typecheck configured yet.
 
 ## Git workflow
 

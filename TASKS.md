@@ -46,7 +46,7 @@
 
 ## Phase 2: Agent Tools
 
-- [ ] **T-200** 🔴 Implement `src/tools.py`
+- [x] **T-200** 🔴 Implement `src/tools.py`
       - `get_accounts()` → list all accounts
       - `get_balances()` → current balances per account
       - `get_budget(year, month)` → budget status for a month
@@ -195,11 +195,11 @@ T-300 ──────────────────┼────┤
 |---|---|---|
 | 0 — Project Setup | 5 | ✅ 5/5 Done |
 | 1 — Config & HTTP | 2 | ✅ 2/2 Done |
-| 2 — Agent Tools | 1 | ⬜ Pending |
+| 2 — Agent Tools | 1 | ✅ 1/1 Done |
 | 3 — Multimodal | 1 | ⬜ Pending |
 | 4 — LangGraph Agent | 1 | ⬜ Pending |
 | 5 — Telegram Bot | 2 | ⬜ Pending |
 | 6 — Entry Point | 1 | ⬜ Pending |
 | 7 — Testing | 6 | ⬜ Pending |
 | 8 — Polish | 3 | ⬜ Pending |
-| **Total** | **22** | **✅ 7/22 · ⬜ 15 Pending** |
+| **Total** | **22** | **✅ 8/22 · ⬜ 14 Pending** |

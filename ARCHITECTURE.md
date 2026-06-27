@@ -59,11 +59,17 @@ ai-personal-finanza/
 │                              #   - Typed wrappers for each endpoint
 │                              #   - API Key authentication
 │                              #   - Amount conversion (euros ↔ cents)
+├── tests/
+│   ├── __init__.py
+│   ├── conftest.py            # Shared fixtures (mock client, env vars)
+│   └── test_tools.py          # 11 tests for all agent tools
 ├── docker-compose.yml         # 3 services: actual-server, actual-http-api, app
 ├── Dockerfile                 # Python application image
+├── Dockerfile.test            # Test image (installs deps + runs pytest)
 ├── requirements.txt           # Python dependencies
 ├── .env.example               # Environment variable template
-└── ARCHITECTURE.md            # This file
+├── ARCHITECTURE.md            # This file
+└── AGENTS.md                  # Agent / AI assistant guide
 ```
 
 ---
@@ -276,16 +282,22 @@ Following Actual Budget's convention, all monetary amounts are stored as **integ
 ## Environment Variables (.env)
 
 ```
-# Actual Budget
+# Actual Budget Server (for actual-http-api container)
 ACTUAL_PASSWORD=your_actual_server_password
 
-# Middleware
+# Actual Budget Sync ID (Settings → Show advanced settings → Sync ID)
+BUDGET_SYNC_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+
+# Middleware API Key (generate with: openssl rand -hex 32)
 MIDDLEWARE_API_KEY=openssl_rand_hex_32
 
-# Telegram
+# Middleware URL (override for local dev outside Docker)
+MIDDLEWARE_URL=http://actual-http-api:5007
+
+# Telegram Bot (get from @BotFather)
 TELEGRAM_TOKEN=your_bot_token_from_botfather
 
-# Gemini
+# Google Gemini (get from https://aistudio.google.com)
 GEMINI_API_KEY=your_gemini_api_key_from_aistudio
 ```
 
@@ -312,7 +324,35 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       MIDDLEWARE_URL: http://actual-http-api:5007
       MIDDLEWARE_API_KEY: ${MIDDLEWARE_API_KEY}
+      BUDGET_SYNC_ID: ${BUDGET_SYNC_ID}
 ```
+
+---
+
+## Testing
+
+Tests are written with **pytest** + **pytest-asyncio** and run inside a dedicated Docker container to avoid local dependency conflicts.
+
+```bash
+# Build and run all tests
+docker build -f Dockerfile.test -t app-test . && docker run --rm app-test
+```
+
+### Test structure
+
+```
+tests/
+├── conftest.py          # Mocks ActualClient, sets env vars, resets singleton
+├── test_tools.py        # 11 tests covering all 8 tools
+└── __init__.py
+```
+
+### Mocking strategy
+
+- `ActualClient` is mocked via `unittest.mock.MagicMock(spec=ActualClient)`.
+- Every async method (`get_accounts`, `add_transaction`, etc.) is replaced with `AsyncMock`.
+- The module-level `_client` singleton in `tools.py` is replaced with the mock via `@patch`.
+- `conftest.py` provides an `autouse` fixture that resets the singleton before each test.
 
 ---
 
