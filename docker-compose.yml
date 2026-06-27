@@ -1,0 +1,35 @@
+services:
+  actual-server:
+    image: actualbudget/actual-server:latest
+    ports:
+      - "5006:5006"
+    volumes:
+      - actual-data:/data
+    restart: unless-stopped
+
+  actual-http-api:
+    image: jhonderson/actual-http-api:latest
+    ports:
+      - "5007:5007"
+    environment:
+      ACTUAL_SERVER_URL: http://actual-server:5006/
+      ACTUAL_SERVER_PASSWORD: ${ACTUAL_PASSWORD}
+      API_KEY: ${MIDDLEWARE_API_KEY}
+    depends_on:
+      - actual-server
+    restart: unless-stopped
+
+  app:
+    build: .
+    environment:
+      TELEGRAM_TOKEN: ${TELEGRAM_TOKEN}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      MIDDLEWARE_URL: http://actual-http-api:5007
+      MIDDLEWARE_API_KEY: ${MIDDLEWARE_API_KEY}
+      BUDGET_SYNC_ID: ${BUDGET_SYNC_ID}
+    depends_on:
+      - actual-http-api
+    restart: unless-stopped
+
+volumes:
+  actual-data:
