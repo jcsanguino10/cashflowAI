@@ -19,6 +19,7 @@ class Account:
     name: str
     offbudget: bool
     closed: bool
+    balance_current: int | None = None
 
 
 @dataclass

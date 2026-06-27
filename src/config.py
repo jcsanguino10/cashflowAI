@@ -1,7 +1,7 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Config(BaseSettings, case_sensitive=False):
+class Config(BaseSettings):
     telegram_token: str
     gemini_api_key: str
 
@@ -10,7 +10,12 @@ class Config(BaseSettings, case_sensitive=False):
 
     budget_sync_id: str
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
 
 
 config = Config()
