@@ -62,7 +62,7 @@
 
 ## Phase 3: Multimodal Processing
 
-- [ ] **T-300** 🔴 Implement `src/multimodal.py`
+- [x] **T-300** 🔴 Implement `src/multimodal.py`
       - `transcribe_audio(audio_bytes)` → text via Gemini
       - `extract_receipt_items(image_bytes)` → structured JSON via Gemini Vision
       - `parse_bank_statement(file_bytes, file_type)` → transaction list via Gemini
@@ -196,10 +196,10 @@ T-300 ──────────────────┼────┤
 | 0 — Project Setup | 5 | ✅ 5/5 Done |
 | 1 — Config & HTTP | 2 | ✅ 2/2 Done |
 | 2 — Agent Tools | 1 | ✅ 1/1 Done |
-| 3 — Multimodal | 1 | ⬜ Pending |
+| 3 — Multimodal | 1 | ✅ 1/1 Done |
 | 4 — LangGraph Agent | 1 | ⬜ Pending |
 | 5 — Telegram Bot | 2 | ⬜ Pending |
 | 6 — Entry Point | 1 | ⬜ Pending |
 | 7 — Testing | 6 | ⬜ Pending |
 | 8 — Polish | 3 | ⬜ Pending |
-| **Total** | **22** | **✅ 8/22 · ⬜ 14 Pending** |
+| **Total** | **22** | **✅ 9/22 · ⬜ 13 Pending** |
