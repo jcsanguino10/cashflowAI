@@ -14,9 +14,13 @@ from src.tools import (
     add_transaction,
     add_transactions_batch,
     analyze_spending,
+    create_new_category,
+    create_new_category_group,
     get_accounts,
     get_balances,
     get_budget_month,
+    get_categories_list,
+    get_category_groups_list,
     get_recommendations,
     get_transactions,
 )
@@ -46,6 +50,10 @@ _TOOLS = [
     add_split_transaction,
     analyze_spending,
     get_recommendations,
+    get_categories_list,
+    get_category_groups_list,
+    create_new_category,
+    create_new_category_group,
 ]
 
 _llm = ChatGoogleGenerativeAI(
@@ -78,7 +86,13 @@ Selección de cuenta:
 
 Procesamiento por lotes:
 - Cuando recibas un extracto bancario con múltiples transacciones (3 o más), usa add_transactions_batch en lugar de llamar add_transaction repetidamente.
-- add_transactions_batch ya maneja el particionado en lotes internamente."""
+- add_transactions_batch ya maneja el particionado en lotes internamente.
+
+Asignación de categorías:
+- Siempre que crees transacciones (individuales o en lote), llama primero a get_categories_list() para ver las categorías existentes en Actual Budget.
+- Clasifica cada transacción en la categoría más adecuada según la descripción o el nombre del beneficiario.
+- Si ninguna categoría existente es adecuada, llama a get_category_groups_list() para ver los grupos disponibles, elige el grupo más apropiado y crea la nueva categoría con create_new_category(nombre, grupo).
+- Si ni siquiera existe un grupo adecuado, créalo primero con create_new_category_group(nombre)."""
 
 
 # ---------------------------------------------------------------------------

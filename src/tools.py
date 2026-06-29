@@ -7,6 +7,7 @@ from langchain_core.tools import tool
 from src.config import config
 from src.middleware_client import (
     ActualClient,
+    CategoryGroup,
     Transaction,
     cents_to_euros,
     euros_to_cents,
@@ -50,7 +51,25 @@ async def _resolve_category(category_name: str) -> str | None:
     for cat in categories:
         if name_lower in cat.name.lower():
             return cat.id
+    names = ", ".join(c.name for c in categories)
+    print(f"[WARN] Categoría '{category_name}' no encontrada. Disponibles: {names}")
     return None
+
+
+async def _resolve_category_group(group_name: str) -> str:
+    client = await _get_client()
+    groups = await client.get_category_groups()
+    name_lower = group_name.lower()
+    for g in groups:
+        if g.name.lower() == name_lower:
+            return g.id
+    for g in groups:
+        if name_lower in g.name.lower():
+            return g.id
+    group_names = ", ".join(g.name for g in groups)
+    raise ValueError(
+        f"Grupo '{group_name}' no encontrado. Disponibles: {group_names}"
+    )
 
 
 async def _spending_by_category(
@@ -453,6 +472,78 @@ async def get_recommendations() -> str:
         lines.append(f"  • {cat_name}: €{amt:,.2f} ({pct:.1f}%)")
 
     return "\n".join(lines)
+
+
+@tool
+async def get_categories_list() -> str:
+    """Get all categories from the budget, grouped by category group.
+
+    Use this to see what categories exist before creating transactions.
+    """
+    client = await _get_client()
+    categories = await client.get_categories()
+    groups = await client.get_category_groups()
+
+    group_map: dict[str, str] = {g.id: g.name for g in groups}
+    by_group: dict[str, list[str]] = {}
+    for cat in categories:
+        if cat.hidden:
+            continue
+        gname = group_map.get(cat.group_id, "Otros")
+        by_group.setdefault(gname, []).append(cat.name)
+
+    lines = ["Categorías disponibles:"]
+    for gname, cat_names in sorted(by_group.items()):
+        lines.append(f"  [{gname}]")
+        for name in sorted(cat_names):
+            lines.append(f"    • {name}")
+    return "\n".join(lines)
+
+
+@tool
+async def get_category_groups_list() -> str:
+    """Get all category groups from the budget.
+
+    Use this before creating a new category to find which group to use.
+    """
+    client = await _get_client()
+    groups = await client.get_category_groups()
+    lines = ["Grupos de categorías:"]
+    for g in groups:
+        if not g.hidden:
+            lines.append(f"  • {g.name}")
+    return "\n".join(lines)
+
+
+@tool
+async def create_new_category(name: str, group_name: str) -> str:
+    """Create a new category in the specified group.
+
+    Call get_category_groups_list() first to see available groups.
+    The category will be created in the existing group you specify.
+
+    Args:
+        name: Name for the new category (e.g. "Suscripciones Streaming")
+        group_name: Name of the existing group to place it in
+    """
+    client = await _get_client()
+    group_id = await _resolve_category_group(group_name)
+    cat_id = await client.create_category(name, group_id)
+    return f"✅ Categoría '{name}' creada (id: {cat_id}) en grupo '{group_name}'"
+
+
+@tool
+async def create_new_category_group(name: str) -> str:
+    """Create a new category group.
+
+    Use this when no existing group is suitable for a new category.
+
+    Args:
+        name: Name for the new group (e.g. "Suscripciones")
+    """
+    client = await _get_client()
+    group_id = await client.create_category_group(name)
+    return f"✅ Grupo '{name}' creado (id: {group_id})"
 
 
 async def shutdown_client() -> None:

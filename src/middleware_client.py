@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import dataclass, field
 from datetime import date
 from typing import Any
@@ -5,6 +6,9 @@ from typing import Any
 import httpx
 
 from src.config import config
+
+_RETRY_MAX = 3
+_RETRY_DELAY = 1.0
 
 
 class MiddlewareError(Exception):
@@ -29,6 +33,15 @@ class Category:
     is_income: bool
     hidden: bool
     group_id: str
+
+
+@dataclass
+class CategoryGroup:
+    id: str
+    name: str
+    is_income: bool
+    hidden: bool
+    categories: list = field(default_factory=list)
 
 
 @dataclass
@@ -81,16 +94,36 @@ class ActualClient:
         await self._client.aclose()
 
     async def _get(self, path: str) -> Any:
-        resp = await self._client.get(path)
-        if resp.status_code != 200:
-            raise MiddlewareError(resp.text, resp.status_code)
-        return resp.json()["data"]
+        last_error: Exception | None = None
+        for attempt in range(1, _RETRY_MAX + 1):
+            try:
+                resp = await self._client.get(path)
+                if resp.status_code != 200:
+                    raise MiddlewareError(resp.text, resp.status_code)
+                return resp.json()["data"]
+            except MiddlewareError as e:
+                if e.status_code != 500 or attempt == _RETRY_MAX:
+                    raise
+                print(f"[RETRY] _get {path} failed (500), intento {attempt}/{_RETRY_MAX}")
+                await asyncio.sleep(_RETRY_DELAY * attempt)
+                last_error = e
+        raise last_error  # type: ignore[misc]
 
     async def _post(self, path: str, body: dict) -> Any:
-        resp = await self._client.post(path, json=body)
-        if resp.status_code >= 400:
-            raise MiddlewareError(resp.text, resp.status_code)
-        return resp.json()
+        last_error: Exception | None = None
+        for attempt in range(1, _RETRY_MAX + 1):
+            try:
+                resp = await self._client.post(path, json=body)
+                if resp.status_code >= 400:
+                    raise MiddlewareError(resp.text, resp.status_code)
+                return resp.json()
+            except MiddlewareError as e:
+                if e.status_code != 500 or attempt == _RETRY_MAX:
+                    raise
+                print(f"[RETRY] _post {path} failed (500), intento {attempt}/{_RETRY_MAX}")
+                await asyncio.sleep(_RETRY_DELAY * attempt)
+                last_error = e
+        raise last_error  # type: ignore[misc]
 
     async def _patch(self, path: str, body: dict) -> Any:
         resp = await self._client.patch(path, json=body)
@@ -138,7 +171,7 @@ class ActualClient:
         self,
         account_id: str,
         transaction: Transaction,
-        learn_categories: bool = False,
+        learn_categories: bool = True,
         run_transfers: bool = False,
     ) -> str:
         body = {
@@ -153,7 +186,7 @@ class ActualClient:
         self,
         account_id: str,
         transactions: list[Transaction],
-        learn_categories: bool = False,
+        learn_categories: bool = True,
         run_transfers: bool = False,
     ) -> str:
         body = {
@@ -212,6 +245,41 @@ class ActualClient:
     async def get_categories(self) -> list[Category]:
         data = await self._get("/categories")
         return [Category(**c) for c in data]
+
+    async def get_category_groups(self) -> list[CategoryGroup]:
+        data = await self._get("/categorygroups")
+        return [CategoryGroup(**g) for g in data]
+
+    async def create_category_group(
+        self, name: str, is_income: bool = False, hidden: bool = False
+    ) -> str:
+        body = {
+            "category_group": {
+                "name": name,
+                "is_income": is_income,
+                "hidden": hidden,
+            }
+        }
+        result = await self._post("/categorygroups", body)
+        return result["data"]
+
+    async def create_category(
+        self,
+        name: str,
+        group_id: str,
+        is_income: bool = False,
+        hidden: bool = False,
+    ) -> str:
+        body = {
+            "category": {
+                "name": name,
+                "group_id": group_id,
+                "is_income": is_income,
+                "hidden": hidden,
+            }
+        }
+        result = await self._post("/categories", body)
+        return result["data"]
 
     async def get_category(self, category_id: str) -> Category | None:
         try:
