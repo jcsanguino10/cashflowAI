@@ -94,7 +94,7 @@
       - `help` handler — available commands
       Dependencies: T-400
 
-- [ ] **T-501** 🟡 Rate limiting and user validation
+- [x] **T-501** 🟡 Rate limiting and user validation
       - Single-user guard (reject messages from unknown chat IDs)
       - Basic rate limiting per minute
       Dependencies: T-500
@@ -135,12 +135,12 @@
 
 ## Phase 7: Testing & Validation
 
-- [ ] **T-700** 🟡 Test basic text transactions
+- [x] **T-700** 🟡 Test basic text transactions
       - "Gasté €50 en Netflix"
       - Verify transaction appears in Actual Budget
       Dependencies: T-600
 
-- [ ] **T-701** 🟡 Test split transaction from receipt photo
+- [x] **T-701** 🟡 Test split transaction from receipt photo
       - Upload a receipt image
       - Verify parent + children in Actual Budget
       Dependencies: T-600, T-300
@@ -156,13 +156,13 @@
       - Added add_transactions_batch tool with chunking + delays
       Dependencies: T-600, T-300
 
-- [ ] **T-704** 🟡 Test financial queries
+- [x] **T-704** 🟡 Test financial queries
       - "¿Cuánto gasté este mes?"
       - "¿Cómo voy con el presupuesto?"
       - Verify responses are coherent and accurate
       Dependencies: T-600
 
-- [ ] **T-705** 🟢 Test error handling
+- [x] **T-705** 🟢 Test error handling
       - Invalid amounts, missing fields, network errors
       - Verify user receives helpful error messages
       Dependencies: T-600
