@@ -85,7 +85,7 @@
 
 ## Phase 5: Telegram Bot
 
-- [ ] **T-500** 🔴 Implement `src/bot.py`
+- [x] **T-500** 🔴 Implement `src/bot.py`
       - `start` handler — welcome message
       - `text_message` handler → invokes agent (T-400)
       - `voice_message` handler → download audio → T-300 → T-400
@@ -198,8 +198,8 @@ T-300 ──────────────────┼────┤
 | 2 — Agent Tools | 1 | ✅ 1/1 Done |
 | 3 — Multimodal | 1 | ✅ 1/1 Done |
 | 4 — LangGraph Agent | 1 | ✅ 1/1 Done |
-| 5 — Telegram Bot | 2 | ⬜ Pending |
+| 5 — Telegram Bot | 2 | ✅ 1/2 Done · ⬜ 1 Pending |
 | 6 — Entry Point | 1 | ⬜ Pending |
 | 7 — Testing | 6 | ⬜ Pending |
 | 8 — Polish | 3 | ⬜ Pending |
-| **Total** | **22** | **✅ 10/22 · ⬜ 12 Pending** |
+| **Total** | **22** | **✅ 11/22 · ⬜ 11 Pending** |
