@@ -73,7 +73,7 @@
 
 ## Phase 4: LangGraph Agent
 
-- [ ] **T-400** 🔴 Implement `src/agent.py`
+- [x] **T-400** 🔴 Implement `src/agent.py`
       - Define `AgentState` TypedDict with messages, media, tool_results
       - `multimodal_preprocessor` node (calls T-300 if media present)
       - `financial_agent` node (Gemini LLM + bound tools from T-200)
@@ -197,9 +197,9 @@ T-300 ──────────────────┼────┤
 | 1 — Config & HTTP | 2 | ✅ 2/2 Done |
 | 2 — Agent Tools | 1 | ✅ 1/1 Done |
 | 3 — Multimodal | 1 | ✅ 1/1 Done |
-| 4 — LangGraph Agent | 1 | ⬜ Pending |
+| 4 — LangGraph Agent | 1 | ✅ 1/1 Done |
 | 5 — Telegram Bot | 2 | ⬜ Pending |
 | 6 — Entry Point | 1 | ⬜ Pending |
 | 7 — Testing | 6 | ⬜ Pending |
 | 8 — Polish | 3 | ⬜ Pending |
-| **Total** | **22** | **✅ 9/22 · ⬜ 13 Pending** |
+| **Total** | **22** | **✅ 10/22 · ⬜ 12 Pending** |
