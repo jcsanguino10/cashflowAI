@@ -125,7 +125,7 @@
       - Verify parent + children in Actual Budget
       Dependencies: T-600, T-300
 
-- [ ] **T-702** 🟡 Test voice command
+- [x] **T-702** 🟡 Test voice command
       - Send voice message with expense
       - Verify correct transcription and transaction
       Dependencies: T-600, T-300
@@ -200,6 +200,6 @@ T-300 ──────────────────┼────┤
 | 4 — LangGraph Agent | 1 | ✅ 1/1 Done |
 | 5 — Telegram Bot | 2 | ✅ 1/2 Done · ⬜ 1 Pending |
 | 6 — Entry Point | 1 | ✅ 1/1 Done |
-| 7 — Testing | 6 | ⬜ Pending |
+| 7 — Testing | 6 | ✅ 1/6 Done · ⬜ 5 Pending |
 | 8 — Polish | 3 | ⬜ Pending |
-| **Total** | **22** | **✅ 12/22 · ⬜ 10 Pending** |
+| **Total** | **22** | **✅ 13/22 · ⬜ 9 Pending** |

@@ -6,6 +6,8 @@ class Config(BaseSettings):
     gemini_api_key: str
     gemini_model: str = "gemini-2.0-flash"
 
+    temperature: float = 0.9
+
     middleware_url: str = "http://actual-http-api:5007"
     middleware_api_key: str
 

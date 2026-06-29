@@ -1,5 +1,6 @@
 from typing import Annotated, Any, Literal, Optional, TypedDict
 
+from google.genai.types import AutomaticFunctionCallingConfig
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import END, StateGraph
@@ -51,7 +52,10 @@ _llm = ChatGoogleGenerativeAI(
     temperature=0.3,
 )
 
-_agent = _llm.bind_tools(_TOOLS)
+_agent = _llm.bind_tools(
+    _TOOLS,
+    automatic_function_calling=AutomaticFunctionCallingConfig(disable=True),
+)
 
 _SYSTEM_PROMPT = """Eres un asistente de finanzas personales que ayuda a gestionar un presupuesto en Actual Budget.
 

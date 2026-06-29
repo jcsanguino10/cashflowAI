@@ -6,6 +6,17 @@ from src.agent import agent
 from src.config import config
 
 
+def _extract_text(content: str | list) -> str:
+    """Extrae texto plano del content de Gemini (string en 2.x, lista en 3.x)."""
+    if isinstance(content, list):
+        parts = [
+            p["text"] for p in content
+            if isinstance(p, dict) and p.get("type") == "text"
+        ]
+        return " ".join(parts)
+    return content
+
+
 async def start(update: Update, _context):
     await update.message.reply_text(
         "¡Hola! Soy tu asistente de finanzas personales.\n\n"
@@ -34,7 +45,7 @@ async def text_message(update: Update, _context):
     }
     try:
         result = await agent.ainvoke(state)
-        response = result["messages"][-1].content
+        response = _extract_text(result["messages"][-1].content)
         await update.message.reply_text(response)
     except Exception as e:
         await update.message.reply_text(f"Lo siento, ocurrió un error: {e!s}")
@@ -54,7 +65,7 @@ async def voice_message(update: Update, _context):
     }
     try:
         result = await agent.ainvoke(state)
-        response = result["messages"][-1].content
+        response = _extract_text(result["messages"][-1].content)
         await update.message.reply_text(response)
     except Exception as e:
         await update.message.reply_text(
@@ -76,7 +87,7 @@ async def photo_message(update: Update, _context):
     }
     try:
         result = await agent.ainvoke(state)
-        response = result["messages"][-1].content
+        response = _extract_text(result["messages"][-1].content)
         await update.message.reply_text(response)
     except Exception as e:
         await update.message.reply_text(
@@ -114,7 +125,7 @@ async def document_message(update: Update, _context):
     }
     try:
         result = await agent.ainvoke(state)
-        response = result["messages"][-1].content
+        response = _extract_text(result["messages"][-1].content)
         await update.message.reply_text(response)
     except Exception as e:
         await update.message.reply_text(

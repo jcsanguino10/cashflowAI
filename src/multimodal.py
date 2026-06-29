@@ -94,6 +94,14 @@ class MediaProcessor:
     def _build_message(
         self, prompt: str, data_bytes: bytes, mime: str
     ) -> HumanMessage:
+        if mime.startswith("audio/"):
+            b64 = base64.b64encode(data_bytes).decode("utf-8")
+            return HumanMessage(
+                content=[
+                    {"type": "text", "text": prompt},
+                    {"type": "audio", "base64": b64, "mime_type": mime},
+                ]
+            )
         b64 = base64.b64encode(data_bytes).decode("utf-8")
         return HumanMessage(
             content=[
@@ -112,7 +120,14 @@ class MediaProcessor:
         mime = _mime_type(file_type)
         msg = self._build_message(_TRANSCRIBE_PROMPT, audio_bytes, mime)
         response = await self._llm.ainvoke([msg])
-        return response.content.strip()
+        content = response.content
+        if isinstance(content, list):
+            text_parts = [
+                p["text"] for p in content
+                if isinstance(p, dict) and p.get("type") == "text"
+            ]
+            return " ".join(text_parts).strip()
+        return content.strip()
 
     async def extract_receipt_items(self, image_bytes: bytes) -> Receipt:
         """Extract structured data from a receipt image."""
