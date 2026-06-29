@@ -206,7 +206,7 @@ async def add_transaction(
     account_name: str,
     payee_name: str,
     amount: float,
-    date: str,
+    tx_date: str = "",
     category_name: Optional[str] = None,
     notes: Optional[str] = None,
 ) -> str:
@@ -218,10 +218,12 @@ async def add_transaction(
         account_name: Account name (e.g. "Compte Corrent")
         payee_name: Payee or description
         amount: Amount in euros (e.g. -50.00 for an expense)
-        date: Date YYYY-MM-DD
+        tx_date: Date YYYY-MM-DD (defaults to today if not provided)
         category_name: Optional category name
         notes: Optional notes
     """
+    if not tx_date:
+        tx_date = date.today().isoformat()
     client = await _get_client()
     account_id = await _resolve_account(account_name)
     category_id = await _resolve_category(category_name) if category_name else None
@@ -230,7 +232,7 @@ async def add_transaction(
         account=account_id,
         payee_name=payee_name,
         amount=euros_to_cents(amount),
-        date=date,
+        date=tx_date,
         category=category_id,
         notes=notes,
     )
@@ -280,12 +282,15 @@ async def add_transactions_batch(
             category_id = None
             if "category_name" in tx_data and tx_data["category_name"]:
                 category_id = await _resolve_category(tx_data["category_name"])
+            tx_date = tx_data.get("date", "")
+            if not tx_date:
+                tx_date = date.today().isoformat()
             txs.append(
                 Transaction(
                     account=account_id,
                     payee_name=tx_data["payee_name"],
                     amount=euros_to_cents(tx_data["amount"]),
-                    date=tx_data["date"],
+                    date=tx_date,
                     category=category_id,
                     notes=tx_data.get("notes"),
                 )
@@ -311,8 +316,8 @@ async def add_split_transaction(
     account_name: str,
     payee_name: str,
     amount: float,
-    date: str,
     subtransactions: list[dict],
+    tx_date: str = "",
     notes: Optional[str] = None,
 ) -> str:
     """Create a split transaction with individual line items (e.g. from a receipt).
@@ -328,10 +333,12 @@ async def add_split_transaction(
         account_name: Account name (e.g. "Compte Corrent")
         payee_name: Store / payee name
         amount: Total amount in euros
-        date: Date YYYY-MM-DD
         subtransactions: List of line items
+        tx_date: Date YYYY-MM-DD (defaults to today if not provided)
         notes: Optional notes for the parent transaction
     """
+    if not tx_date:
+        tx_date = date.today().isoformat()
     client = await _get_client()
     account_id = await _resolve_account(account_name)
 
@@ -349,7 +356,7 @@ async def add_split_transaction(
         account_id=account_id,
         payee_name=payee_name,
         total_amount=euros_to_cents(amount),
-        date=date,
+        date=tx_date,
         subtransactions=converted,
         notes=notes or "",
     )
