@@ -113,6 +113,26 @@
 
 ---
 
+## Phase Extra: Category Management
+
+- [x] **T-601** 🔴 Add CategoryGroup dataclass and CRUD methods to middleware_client
+      - CategoryGroup dataclass, get_category_groups, create_category, create_category_group
+      - learn_categories=True by default
+      - Retry logic for transient 500 errors
+      Dependencies: T-101
+
+- [x] **T-602** 🔴 Add category tools for the agent
+      - get_categories_list, get_category_groups_list, create_new_category, create_new_category_group
+      - Enhanced _resolve_category with warnings
+      Dependencies: T-600
+
+- [x] **T-603** 🔴 Update prompts for automatic categorization
+      - Enhanced _STATEMENT_PROMPT to classify transactions
+      - System prompt with category assignment rules
+      Dependencies: T-601
+
+---
+
 ## Phase 7: Testing & Validation
 
 - [ ] **T-700** 🟡 Test basic text transactions
@@ -125,14 +145,15 @@
       - Verify parent + children in Actual Budget
       Dependencies: T-600, T-300
 
-- [ ] **T-702** 🟡 Test voice command
+- [x] **T-702** 🟡 Test voice command
       - Send voice message with expense
       - Verify correct transcription and transaction
       Dependencies: T-600, T-300
 
-- [ ] **T-703** 🟡 Test bank statement PDF
+- [x] **T-703** 🟡 Test bank statement PDF
       - Upload a PDF with multiple transactions
       - Verify all transactions created
+      - Added add_transactions_batch tool with chunking + delays
       Dependencies: T-600, T-300
 
 - [ ] **T-704** 🟡 Test financial queries
@@ -199,7 +220,8 @@ T-300 ──────────────────┼────┤
 | 3 — Multimodal | 1 | ✅ 1/1 Done |
 | 4 — LangGraph Agent | 1 | ✅ 1/1 Done |
 | 5 — Telegram Bot | 2 | ✅ 1/2 Done · ⬜ 1 Pending |
-| 6 — Entry Point | 1 | ✅ 1/1 Done |
-| 7 — Testing | 6 | ⬜ Pending |
-| 8 — Polish | 3 | ⬜ Pending |
-| **Total** | **22** | **✅ 12/22 · ⬜ 10 Pending** |
+| 6 — Category Management | 3 | ✅ 3/3 Done |
+| 7 — Entry Point | 1 | ✅ 1/1 Done |
+| 8 — Testing | 6 | ✅ 2/6 Done · ⬜ 4 Pending |
+| 9 — Polish | 3 | ⬜ Pending |
+| **Total** | **25** | **✅ 17/25 · ⬜ 8 Pending** |

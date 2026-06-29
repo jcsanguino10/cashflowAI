@@ -1,3 +1,4 @@
+import asyncio
 from datetime import date, timedelta
 from typing import Any, Optional
 
@@ -6,6 +7,7 @@ from langchain_core.tools import tool
 from src.config import config
 from src.middleware_client import (
     ActualClient,
+    CategoryGroup,
     Transaction,
     cents_to_euros,
     euros_to_cents,
@@ -49,7 +51,25 @@ async def _resolve_category(category_name: str) -> str | None:
     for cat in categories:
         if name_lower in cat.name.lower():
             return cat.id
+    names = ", ".join(c.name for c in categories)
+    print(f"[WARN] Categoría '{category_name}' no encontrada. Disponibles: {names}")
     return None
+
+
+async def _resolve_category_group(group_name: str) -> str:
+    client = await _get_client()
+    groups = await client.get_category_groups()
+    name_lower = group_name.lower()
+    for g in groups:
+        if g.name.lower() == name_lower:
+            return g.id
+    for g in groups:
+        if name_lower in g.name.lower():
+            return g.id
+    group_names = ", ".join(g.name for g in groups)
+    raise ValueError(
+        f"Grupo '{group_name}' no encontrado. Disponibles: {group_names}"
+    )
 
 
 async def _spending_by_category(
@@ -205,7 +225,7 @@ async def add_transaction(
     account_name: str,
     payee_name: str,
     amount: float,
-    date: str,
+    tx_date: str = "",
     category_name: Optional[str] = None,
     notes: Optional[str] = None,
 ) -> str:
@@ -217,10 +237,12 @@ async def add_transaction(
         account_name: Account name (e.g. "Compte Corrent")
         payee_name: Payee or description
         amount: Amount in euros (e.g. -50.00 for an expense)
-        date: Date YYYY-MM-DD
+        tx_date: Date YYYY-MM-DD (defaults to today if not provided)
         category_name: Optional category name
         notes: Optional notes
     """
+    if not tx_date:
+        tx_date = date.today().isoformat()
     client = await _get_client()
     account_id = await _resolve_account(account_name)
     category_id = await _resolve_category(category_name) if category_name else None
@@ -229,7 +251,7 @@ async def add_transaction(
         account=account_id,
         payee_name=payee_name,
         amount=euros_to_cents(amount),
-        date=date,
+        date=tx_date,
         category=category_id,
         notes=notes,
     )
@@ -237,13 +259,84 @@ async def add_transaction(
     return f"✅ Transaction added: {payee_name} €{amount:+,.2f} — {result}"
 
 
+_BATCH_CHUNK_SIZE = 10
+_BATCH_CHUNK_DELAY = 0.3
+
+
+@tool
+async def add_transactions_batch(
+    account_name: str,
+    transactions: list[dict],
+) -> str:
+    """Add multiple transactions at once to an account.
+
+    Use this for bank statements, receipt batches or any bulk import.
+    Each transaction dict must have:
+      - payee_name (str)
+      - amount (float, negative for expenses, positive for income)
+      - date (str YYYY-MM-DD)
+    Optional fields:
+      - category_name (str)
+      - notes (str)
+
+    Args:
+        account_name: Account name (e.g. "Nubank Credit", "Compte Corrent")
+        transactions: List of transaction dicts
+    """
+    client = await _get_client()
+    account_id = await _resolve_account(account_name)
+
+    total = len(transactions)
+    processed = 0
+    errors: list[str] = []
+
+    chunks = [
+        transactions[i : i + _BATCH_CHUNK_SIZE]
+        for i in range(0, total, _BATCH_CHUNK_SIZE)
+    ]
+
+    for chunk_idx, chunk in enumerate(chunks, 1):
+        txs: list[Transaction] = []
+        for tx_data in chunk:
+            category_id = None
+            if "category_name" in tx_data and tx_data["category_name"]:
+                category_id = await _resolve_category(tx_data["category_name"])
+            tx_date = tx_data.get("date", "")
+            if not tx_date:
+                tx_date = date.today().isoformat()
+            txs.append(
+                Transaction(
+                    account=account_id,
+                    payee_name=tx_data["payee_name"],
+                    amount=euros_to_cents(tx_data["amount"]),
+                    date=tx_date,
+                    category=category_id,
+                    notes=tx_data.get("notes"),
+                )
+            )
+
+        try:
+            result = await client.add_transactions_batch(account_id, txs)
+            processed += len(chunk)
+        except Exception as e:
+            errors.append(f"chunk {chunk_idx}: {e!s}")
+
+        if chunk_idx < len(chunks):
+            await asyncio.sleep(_BATCH_CHUNK_DELAY)
+
+    parts = [f"✅ {processed}/{total} transacciones procesadas en {len(chunks)} lote(s)"]
+    if errors:
+        parts.append(f"Errores: {'; '.join(errors)}")
+    return "\n".join(parts)
+
+
 @tool
 async def add_split_transaction(
     account_name: str,
     payee_name: str,
     amount: float,
-    date: str,
     subtransactions: list[dict],
+    tx_date: str = "",
     notes: Optional[str] = None,
 ) -> str:
     """Create a split transaction with individual line items (e.g. from a receipt).
@@ -259,10 +352,12 @@ async def add_split_transaction(
         account_name: Account name (e.g. "Compte Corrent")
         payee_name: Store / payee name
         amount: Total amount in euros
-        date: Date YYYY-MM-DD
         subtransactions: List of line items
+        tx_date: Date YYYY-MM-DD (defaults to today if not provided)
         notes: Optional notes for the parent transaction
     """
+    if not tx_date:
+        tx_date = date.today().isoformat()
     client = await _get_client()
     account_id = await _resolve_account(account_name)
 
@@ -280,7 +375,7 @@ async def add_split_transaction(
         account_id=account_id,
         payee_name=payee_name,
         total_amount=euros_to_cents(amount),
-        date=date,
+        date=tx_date,
         subtransactions=converted,
         notes=notes or "",
     )
@@ -377,6 +472,78 @@ async def get_recommendations() -> str:
         lines.append(f"  • {cat_name}: €{amt:,.2f} ({pct:.1f}%)")
 
     return "\n".join(lines)
+
+
+@tool
+async def get_categories_list() -> str:
+    """Get all categories from the budget, grouped by category group.
+
+    Use this to see what categories exist before creating transactions.
+    """
+    client = await _get_client()
+    categories = await client.get_categories()
+    groups = await client.get_category_groups()
+
+    group_map: dict[str, str] = {g.id: g.name for g in groups}
+    by_group: dict[str, list[str]] = {}
+    for cat in categories:
+        if cat.hidden:
+            continue
+        gname = group_map.get(cat.group_id, "Otros")
+        by_group.setdefault(gname, []).append(cat.name)
+
+    lines = ["Categorías disponibles:"]
+    for gname, cat_names in sorted(by_group.items()):
+        lines.append(f"  [{gname}]")
+        for name in sorted(cat_names):
+            lines.append(f"    • {name}")
+    return "\n".join(lines)
+
+
+@tool
+async def get_category_groups_list() -> str:
+    """Get all category groups from the budget.
+
+    Use this before creating a new category to find which group to use.
+    """
+    client = await _get_client()
+    groups = await client.get_category_groups()
+    lines = ["Grupos de categorías:"]
+    for g in groups:
+        if not g.hidden:
+            lines.append(f"  • {g.name}")
+    return "\n".join(lines)
+
+
+@tool
+async def create_new_category(name: str, group_name: str) -> str:
+    """Create a new category in the specified group.
+
+    Call get_category_groups_list() first to see available groups.
+    The category will be created in the existing group you specify.
+
+    Args:
+        name: Name for the new category (e.g. "Suscripciones Streaming")
+        group_name: Name of the existing group to place it in
+    """
+    client = await _get_client()
+    group_id = await _resolve_category_group(group_name)
+    cat_id = await client.create_category(name, group_id)
+    return f"✅ Categoría '{name}' creada (id: {cat_id}) en grupo '{group_name}'"
+
+
+@tool
+async def create_new_category_group(name: str) -> str:
+    """Create a new category group.
+
+    Use this when no existing group is suitable for a new category.
+
+    Args:
+        name: Name for the new group (e.g. "Suscripciones")
+    """
+    client = await _get_client()
+    group_id = await client.create_category_group(name)
+    return f"✅ Grupo '{name}' creado (id: {group_id})"
 
 
 async def shutdown_client() -> None:

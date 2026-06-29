@@ -52,7 +52,13 @@ _RECEIPT_PROMPT = "Extrae los datos de este recibo de compra."
 
 _STATEMENT_PROMPT = (
     "Extrae todas las transacciones de este extracto bancario. "
-    "Los gastos son cantidades negativas, los ingresos son positivas."
+    "Los gastos son cantidades negativas, los ingresos son positivas.\n\n"
+    "Clasifica cada transacción en una categoría (como 'Alimentación', "
+    "'Transporte', 'Salario', 'Hipoteca', 'Subscripciones', "
+    "'Salud', 'Educación', 'Restaurante', 'Supermercado', "
+    "'Seguros', 'Ahorros', etc.) basándote en la descripción "
+    "o el nombre del beneficiario.\n\n"
+    "Devuelve SOLO las transacciones, sin resúmenes ni explicaciones adicionales."
 )
 
 # ---------------------------------------------------------------------------
@@ -84,7 +90,7 @@ class MediaProcessor:
 
     def __init__(self) -> None:
         self._llm = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
+            model=config.gemini_model,
             google_api_key=config.gemini_api_key,
             temperature=0.1,
         )
@@ -94,6 +100,16 @@ class MediaProcessor:
     def _build_message(
         self, prompt: str, data_bytes: bytes, mime: str
     ) -> HumanMessage:
+        b64_len = len(base64.b64encode(data_bytes))
+        print(f"[TRACE multimodal] _build_message: mime={mime}, bytes={len(data_bytes)}, b64_len={b64_len}, prompt_preview={prompt[:50]}")
+        if mime.startswith("audio/"):
+            b64 = base64.b64encode(data_bytes).decode("utf-8")
+            return HumanMessage(
+                content=[
+                    {"type": "text", "text": prompt},
+                    {"type": "audio", "base64": b64, "mime_type": mime},
+                ]
+            )
         b64 = base64.b64encode(data_bytes).decode("utf-8")
         return HumanMessage(
             content=[
@@ -112,7 +128,14 @@ class MediaProcessor:
         mime = _mime_type(file_type)
         msg = self._build_message(_TRANSCRIBE_PROMPT, audio_bytes, mime)
         response = await self._llm.ainvoke([msg])
-        return response.content.strip()
+        content = response.content
+        if isinstance(content, list):
+            text_parts = [
+                p["text"] for p in content
+                if isinstance(p, dict) and p.get("type") == "text"
+            ]
+            return " ".join(text_parts).strip()
+        return content.strip()
 
     async def extract_receipt_items(self, image_bytes: bytes) -> Receipt:
         """Extract structured data from a receipt image."""
@@ -124,9 +147,16 @@ class MediaProcessor:
         self, file_bytes: bytes, file_type: str = "pdf"
     ) -> BankStatement:
         """Parse a bank statement (PDF or image) into transactions."""
+        print(f"[TRACE multimodal] parse_bank_statement: file_type={file_type}, bytes={len(file_bytes)}")
         mime = _mime_type(file_type)
+        print(f"[TRACE multimodal] mime_type mapeado: {mime}")
         msg = self._build_message(_STATEMENT_PROMPT, file_bytes, mime)
+        print(f"[TRACE multimodal] llamando a Gemini con _statement_chain...")
         result: BankStatement = await self._statement_chain.ainvoke([msg])
+        txs = result.transactions if result.transactions else []
+        print(f"[TRACE multimodal] Gemini respondió: {len(txs)} transacciones")
+        if txs:
+            print(f"[TRACE multimodal] 1er tx: {txs[0]}")
         return result
 
 
