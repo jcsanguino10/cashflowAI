@@ -84,7 +84,7 @@ class MediaProcessor:
 
     def __init__(self) -> None:
         self._llm = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
+            model=config.gemini_model,
             google_api_key=config.gemini_api_key,
             temperature=0.1,
         )

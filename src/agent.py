@@ -46,7 +46,7 @@ _TOOLS = [
 ]
 
 _llm = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash",
+    model=config.gemini_model,
     google_api_key=config.gemini_api_key,
     temperature=0.3,
 )
@@ -63,7 +63,12 @@ Reglas importantes:
 - Si el usuario no especifica una fecha, usa la fecha de hoy.
 - Para gastos de supermercado o compras con varios artículos, usa add_split_transaction.
 - Responde siempre en español, de forma clara y concisa.
-- Cuando muestres importes usa siempre el símbolo € y dos decimales."""
+- Cuando muestres importes usa siempre el símbolo € y dos decimales.
+
+Selección de cuenta:
+- Si no sabes qué cuenta usar, llama primero a get_accounts() para ver las cuentas disponibles.
+- Por defecto, prefiere una cuenta que contenga la palabra "credit" (sin distinción de mayúsculas/minúsculas).
+- Si hay varias cuentas y no está claro cuál usar, pregunta al usuario antes de continuar."""
 
 
 # ---------------------------------------------------------------------------
