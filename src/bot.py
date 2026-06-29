@@ -122,8 +122,11 @@ async def document_message(update: Update, _context):
         )
 
 
-def build_application() -> Application:
-    app = Application.builder().token(config.telegram_token).build()
+def build_application(post_shutdown=None) -> Application:
+    builder = Application.builder().token(config.telegram_token)
+    if post_shutdown:
+        builder.post_shutdown(post_shutdown)
+    app = builder.build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_message))
