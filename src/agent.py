@@ -12,6 +12,7 @@ from src.multimodal import get_processor
 from src.tools import (
     add_split_transaction,
     add_transaction,
+    add_transactions_batch,
     analyze_spending,
     get_accounts,
     get_balances,
@@ -41,6 +42,7 @@ _TOOLS = [
     get_budget_month,
     get_transactions,
     add_transaction,
+    add_transactions_batch,
     add_split_transaction,
     analyze_spending,
     get_recommendations,
@@ -72,7 +74,11 @@ Reglas importantes:
 Selección de cuenta:
 - Si no sabes qué cuenta usar, llama primero a get_accounts() para ver las cuentas disponibles.
 - Por defecto, prefiere una cuenta que contenga la palabra "credit" (sin distinción de mayúsculas/minúsculas).
-- Si hay varias cuentas y no está claro cuál usar, pregunta al usuario antes de continuar."""
+- Si hay varias cuentas y no está claro cuál usar, pregunta al usuario antes de continuar.
+
+Procesamiento por lotes:
+- Cuando recibas un extracto bancario con múltiples transacciones (3 o más), usa add_transactions_batch en lugar de llamar add_transaction repetidamente.
+- add_transactions_batch ya maneja el particionado en lotes internamente."""
 
 
 # ---------------------------------------------------------------------------
@@ -83,6 +89,7 @@ Selección de cuenta:
 async def multimodal_preprocessor(state: AgentState) -> dict[str, Any]:
     media = state.get("media")
     if not media:
+        print("[TRACE agent] no media en state, saltando")
         return {}
 
     processor = get_processor()
@@ -90,7 +97,10 @@ async def multimodal_preprocessor(state: AgentState) -> dict[str, Any]:
     media_data = media.get("data")
     file_type = media.get("file_type", "")
 
+    print(f"[TRACE agent] multimodal_preprocessor: type={media_type}, file_type={file_type}, data_size={len(media_data) if media_data else 0}")
+
     if not media_data:
+        print("[TRACE agent] media_data vacío, saltando")
         return {}
 
     try:
@@ -109,7 +119,10 @@ async def multimodal_preprocessor(state: AgentState) -> dict[str, Any]:
                 f"Artículos:\n{items_str}"
             )
         elif media_type == "document":
+            print("[TRACE agent] llamando a parse_bank_statement...")
             statement = await processor.parse_bank_statement(media_data, file_type or "pdf")
+            txs_count = len(statement.transactions) if statement.transactions else 0
+            print(f"[TRACE agent] parse_bank_statement devolvió {txs_count} transacciones")
             txs_str = "\n".join(
                 f"  - {tx.date}: {tx.description}: €{tx.amount:+.2f}" + (f" ({tx.category})" if tx.category else "")
                 for tx in statement.transactions
@@ -118,11 +131,15 @@ async def multimodal_preprocessor(state: AgentState) -> dict[str, Any]:
         else:
             result = f"[Medio no soportado: {media_type}]"
 
+        print(f"[TRACE agent] resultado generado: {result[:300]}")
         return {
             "messages": [HumanMessage(content=result)],
             "media_output": result,
         }
     except Exception as e:
+        print(f"[TRACE agent] EXCEPCIÓN procesando {media_type}: {e!s}")
+        import traceback
+        traceback.print_exc()
         error_msg = f"[Error procesando {media_type}]: {e!s}"
         return {
             "messages": [HumanMessage(content=error_msg)],

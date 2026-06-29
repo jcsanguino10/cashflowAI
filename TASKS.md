@@ -130,9 +130,10 @@
       - Verify correct transcription and transaction
       Dependencies: T-600, T-300
 
-- [ ] **T-703** 🟡 Test bank statement PDF
+- [x] **T-703** 🟡 Test bank statement PDF
       - Upload a PDF with multiple transactions
       - Verify all transactions created
+      - Added add_transactions_batch tool with chunking + delays
       Dependencies: T-600, T-300
 
 - [ ] **T-704** 🟡 Test financial queries
@@ -200,6 +201,6 @@ T-300 ──────────────────┼────┤
 | 4 — LangGraph Agent | 1 | ✅ 1/1 Done |
 | 5 — Telegram Bot | 2 | ✅ 1/2 Done · ⬜ 1 Pending |
 | 6 — Entry Point | 1 | ✅ 1/1 Done |
-| 7 — Testing | 6 | ✅ 1/6 Done · ⬜ 5 Pending |
+| 7 — Testing | 6 | ✅ 2/6 Done · ⬜ 4 Pending |
 | 8 — Polish | 3 | ⬜ Pending |
-| **Total** | **22** | **✅ 13/22 · ⬜ 9 Pending** |
+| **Total** | **22** | **✅ 14/22 · ⬜ 8 Pending** |

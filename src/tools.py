@@ -1,3 +1,4 @@
+import asyncio
 from datetime import date, timedelta
 from typing import Any, Optional
 
@@ -235,6 +236,74 @@ async def add_transaction(
     )
     result = await client.add_transaction(account_id, tx)
     return f"✅ Transaction added: {payee_name} €{amount:+,.2f} — {result}"
+
+
+_BATCH_CHUNK_SIZE = 10
+_BATCH_CHUNK_DELAY = 0.3
+
+
+@tool
+async def add_transactions_batch(
+    account_name: str,
+    transactions: list[dict],
+) -> str:
+    """Add multiple transactions at once to an account.
+
+    Use this for bank statements, receipt batches or any bulk import.
+    Each transaction dict must have:
+      - payee_name (str)
+      - amount (float, negative for expenses, positive for income)
+      - date (str YYYY-MM-DD)
+    Optional fields:
+      - category_name (str)
+      - notes (str)
+
+    Args:
+        account_name: Account name (e.g. "Nubank Credit", "Compte Corrent")
+        transactions: List of transaction dicts
+    """
+    client = await _get_client()
+    account_id = await _resolve_account(account_name)
+
+    total = len(transactions)
+    processed = 0
+    errors: list[str] = []
+
+    chunks = [
+        transactions[i : i + _BATCH_CHUNK_SIZE]
+        for i in range(0, total, _BATCH_CHUNK_SIZE)
+    ]
+
+    for chunk_idx, chunk in enumerate(chunks, 1):
+        txs: list[Transaction] = []
+        for tx_data in chunk:
+            category_id = None
+            if "category_name" in tx_data and tx_data["category_name"]:
+                category_id = await _resolve_category(tx_data["category_name"])
+            txs.append(
+                Transaction(
+                    account=account_id,
+                    payee_name=tx_data["payee_name"],
+                    amount=euros_to_cents(tx_data["amount"]),
+                    date=tx_data["date"],
+                    category=category_id,
+                    notes=tx_data.get("notes"),
+                )
+            )
+
+        try:
+            result = await client.add_transactions_batch(account_id, txs)
+            processed += len(chunk)
+        except Exception as e:
+            errors.append(f"chunk {chunk_idx}: {e!s}")
+
+        if chunk_idx < len(chunks):
+            await asyncio.sleep(_BATCH_CHUNK_DELAY)
+
+    parts = [f"✅ {processed}/{total} transacciones procesadas en {len(chunks)} lote(s)"]
+    if errors:
+        parts.append(f"Errores: {'; '.join(errors)}")
+    return "\n".join(parts)
 
 
 @tool

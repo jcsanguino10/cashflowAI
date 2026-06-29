@@ -52,7 +52,8 @@ _RECEIPT_PROMPT = "Extrae los datos de este recibo de compra."
 
 _STATEMENT_PROMPT = (
     "Extrae todas las transacciones de este extracto bancario. "
-    "Los gastos son cantidades negativas, los ingresos son positivas."
+    "Los gastos son cantidades negativas, los ingresos son positivas.\n\n"
+    "Devuelve SOLO las transacciones, sin resúmenes ni explicaciones adicionales."
 )
 
 # ---------------------------------------------------------------------------
@@ -94,6 +95,8 @@ class MediaProcessor:
     def _build_message(
         self, prompt: str, data_bytes: bytes, mime: str
     ) -> HumanMessage:
+        b64_len = len(base64.b64encode(data_bytes))
+        print(f"[TRACE multimodal] _build_message: mime={mime}, bytes={len(data_bytes)}, b64_len={b64_len}, prompt_preview={prompt[:50]}")
         if mime.startswith("audio/"):
             b64 = base64.b64encode(data_bytes).decode("utf-8")
             return HumanMessage(
@@ -139,9 +142,16 @@ class MediaProcessor:
         self, file_bytes: bytes, file_type: str = "pdf"
     ) -> BankStatement:
         """Parse a bank statement (PDF or image) into transactions."""
+        print(f"[TRACE multimodal] parse_bank_statement: file_type={file_type}, bytes={len(file_bytes)}")
         mime = _mime_type(file_type)
+        print(f"[TRACE multimodal] mime_type mapeado: {mime}")
         msg = self._build_message(_STATEMENT_PROMPT, file_bytes, mime)
+        print(f"[TRACE multimodal] llamando a Gemini con _statement_chain...")
         result: BankStatement = await self._statement_chain.ainvoke([msg])
+        txs = result.transactions if result.transactions else []
+        print(f"[TRACE multimodal] Gemini respondió: {len(txs)} transacciones")
+        if txs:
+            print(f"[TRACE multimodal] 1er tx: {txs[0]}")
         return result
 
 

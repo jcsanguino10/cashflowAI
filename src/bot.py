@@ -100,6 +100,8 @@ async def document_message(update: Update, _context):
     file_name = document.file_name or ""
     mime_type = document.mime_type or ""
 
+    print(f"[TRACE bot] document_message recibido: name={file_name}, mime={mime_type}")
+
     if "pdf" in mime_type or file_name.lower().endswith(".pdf"):
         file_type = "pdf"
     elif "jpeg" in mime_type or file_name.lower().endswith((".jpg", ".jpeg")):
@@ -107,15 +109,20 @@ async def document_message(update: Update, _context):
     elif "png" in mime_type or file_name.lower().endswith(".png"):
         file_type = "png"
     else:
+        print(f"[TRACE bot] formato no soportado: mime={mime_type}, name={file_name}")
         await update.message.reply_text(
             "Formato de documento no soportado. Envíame PDF, JPG o PNG."
         )
         return
 
+    print(f"[TRACE bot] tipo detectado: {file_type}")
+
     try:
         file = await document.get_file()
         file_bytes = await file.download_as_bytearray()
+        print(f"[TRACE bot] descargado: {len(file_bytes)} bytes")
     except Exception as e:
+        print(f"[TRACE bot] error descarga: {e!s}")
         await update.message.reply_text(f"No pude descargar el documento: {e!s}")
         return
 
@@ -123,11 +130,14 @@ async def document_message(update: Update, _context):
         "messages": [HumanMessage(content="[Documento recibido]")],
         "media": {"type": "document", "data": file_bytes, "file_type": file_type},
     }
+    print(f"[TRACE bot] enviando state al agent con media.type={state['media']['type']}, file_type={file_type}")
     try:
         result = await agent.ainvoke(state)
         response = _extract_text(result["messages"][-1].content)
+        print(f"[TRACE bot] respuesta del agent: {response[:200]}")
         await update.message.reply_text(response)
     except Exception as e:
+        print(f"[TRACE bot] error agent: {e!s}")
         await update.message.reply_text(
             f"Lo siento, ocurrió un error al procesar el documento: {e!s}"
         )
