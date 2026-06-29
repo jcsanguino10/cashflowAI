@@ -103,7 +103,7 @@
 
 ## Phase 6: Entry Point
 
-- [ ] **T-600** 🔴 Implement `src/main.py`
+- [x] **T-600** 🔴 Implement `src/main.py`
       - Initialize config
       - Build and compile the LangGraph agent
       - Create bot application with all handlers
@@ -199,7 +199,7 @@ T-300 ──────────────────┼────┤
 | 3 — Multimodal | 1 | ✅ 1/1 Done |
 | 4 — LangGraph Agent | 1 | ✅ 1/1 Done |
 | 5 — Telegram Bot | 2 | ✅ 1/2 Done · ⬜ 1 Pending |
-| 6 — Entry Point | 1 | ⬜ Pending |
+| 6 — Entry Point | 1 | ✅ 1/1 Done |
 | 7 — Testing | 6 | ⬜ Pending |
 | 8 — Polish | 3 | ⬜ Pending |
-| **Total** | **22** | **✅ 11/22 · ⬜ 11 Pending** |
+| **Total** | **22** | **✅ 12/22 · ⬜ 10 Pending** |

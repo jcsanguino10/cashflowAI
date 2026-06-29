@@ -377,3 +377,11 @@ async def get_recommendations() -> str:
         lines.append(f"  • {cat_name}: €{amt:,.2f} ({pct:.1f}%)")
 
     return "\n".join(lines)
+
+
+async def shutdown_client() -> None:
+    """Close the HTTP client singleton on shutdown."""
+    global _client
+    if _client is not None:
+        await _client.close()
+        _client = None
