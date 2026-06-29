@@ -101,27 +101,7 @@
 
 ---
 
-## Phase 6: Category Management
-
-- [x] **T-600** 🔴 Add CategoryGroup dataclass and CRUD methods to middleware_client
-      - CategoryGroup dataclass, get_category_groups, create_category, create_category_group
-      - learn_categories=True by default
-      - Retry logic for transient 500 errors
-      Dependencies: T-101
-
-- [x] **T-601** 🔴 Add category tools for the agent
-      - get_categories_list, get_category_groups_list, create_new_category, create_new_category_group
-      - Enhanced _resolve_category with warnings
-      Dependencies: T-600
-
-- [x] **T-602** 🔴 Update prompts for automatic categorization
-      - Enhanced _STATEMENT_PROMPT to classify transactions
-      - System prompt with category assignment rules
-      Dependencies: T-601
-
----
-
-## Phase 7: Entry Point
+## Phase 6: Entry Point
 
 - [x] **T-600** 🔴 Implement `src/main.py`
       - Initialize config
@@ -130,6 +110,26 @@
       - Start polling (or webhook)
       - Graceful shutdown handler
       Dependencies: T-100, T-400, T-500
+
+---
+
+## Phase Extra: Category Management
+
+- [x] **T-601** 🔴 Add CategoryGroup dataclass and CRUD methods to middleware_client
+      - CategoryGroup dataclass, get_category_groups, create_category, create_category_group
+      - learn_categories=True by default
+      - Retry logic for transient 500 errors
+      Dependencies: T-101
+
+- [x] **T-602** 🔴 Add category tools for the agent
+      - get_categories_list, get_category_groups_list, create_new_category, create_new_category_group
+      - Enhanced _resolve_category with warnings
+      Dependencies: T-600
+
+- [x] **T-603** 🔴 Update prompts for automatic categorization
+      - Enhanced _STATEMENT_PROMPT to classify transactions
+      - System prompt with category assignment rules
+      Dependencies: T-601
 
 ---
 

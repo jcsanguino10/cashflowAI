@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated, Any, Literal, Optional, TypedDict
 
 from google.genai.types import AutomaticFunctionCallingConfig
@@ -67,7 +68,7 @@ _agent = _llm.bind_tools(
     automatic_function_calling=AutomaticFunctionCallingConfig(disable=True),
 )
 
-_SYSTEM_PROMPT = """Eres un asistente de finanzas personales que ayuda a gestionar un presupuesto en Actual Budget.
+_SYSTEM_PROMPT = f"""Eres un asistente de finanzas personales que ayuda a gestionar un presupuesto en Actual Budget. La fecha de hoy es {datetime.now().strftime("%Y-%m-%d")}.
 
 Reglas importantes:
 - Todos los importes están en euros (€).
