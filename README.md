@@ -59,6 +59,18 @@ docker compose up --build
 | `TELEGRAM_TOKEN` | Token del bot de Telegram |
 | `GEMINI_API_KEY` | Clave API de Google Gemini |
 
+### Servicios Docker
+
+El archivo `docker-compose.yml` define tres servicios:
+
+| Servicio | Imagen | Puerto | Rol |
+|---|---|---|---|
+| `actual-server` | `actualbudget/actual-server` | 5006 | Motor financiero (SQLite) |
+| `actual-http-api` | `jhonderson/actual-http-api` | 5007 | REST wrapper sobre el SDK de Actual Budget |
+| `app` | build desde `Dockerfile` | — | Bot de Telegram + Agente LangGraph |
+
+Las variables de entorno se inyectan desde el archivo `.env` en cada servicio según corresponda.
+
 ## Cómo usarlo
 
 Una vez que el bot está corriendo, enviale mensajes desde Telegram:
@@ -87,11 +99,23 @@ cashflowIA/
 │   ├── agent.py               # Grafo de estado con LangGraph
 │   ├── tools.py               # Herramientas del agente financiero
 │   ├── multimodal.py          # Procesamiento de audio, imágenes y PDFs
-│   └── middleware_client.py   # Cliente HTTP para actual-http-api
+│   ├── middleware_client.py   # Cliente HTTP para actual-http-api
+│   ├── prompts/               # Prompts del LLM separados por módulo
+│   │   ├── agent.py
+│   │   ├── bot.py
+│   │   └── multimodal.py
+│   └── schemas/               # Modelos Pydantic para salidas estructuradas
+│       ├── agent.py
+│       └── multimodal.py
+├── tests/
+│   ├── conftest.py            # Fixtures compartidos (mocks, env vars)
+│   └── test_tools.py          # Tests para herramientas del agente
 ├── docker-compose.yml         # Orquestación de servicios
 ├── Dockerfile                 # Imagen de la aplicación
-├── requirements.txt           # Dependencias de Python
+├── Dockerfile.test            # Imagen para ejecutar tests
 ├── .env.example               # Plantilla de configuración
+├── .gitignore
+├── AGENTS.md                  # Guía para el agente que programa
 ├── ARCHITECTURE.md            # Documentación técnica detallada
 ├── TASKS.md                   # Seguimiento de tareas del proyecto
 └── LICENSE                    # Términos de uso
@@ -100,6 +124,20 @@ cashflowIA/
 ## Estado del proyecto
 
 Actualmente en desarrollo activo. Consultá [`TASKS.md`](TASKS.md) para conocer el detalle de tareas pendientes y completadas.
+
+## Tests
+
+Los tests se ejecutan dentro de un contenedor Docker para evitar conflictos de dependencias locales:
+
+```bash
+docker build -f Dockerfile.test -t app-test . && docker run --rm app-test
+```
+
+Estructura:
+- `tests/conftest.py` — fixtures compartidos (mock de `ActualClient`, variables de entorno)
+- `tests/test_tools.py` — tests para las herramientas del agente
+
+El cliente HTTP (`ActualClient`) se mockea con `unittest.mock.MagicMock` y sus métodos async con `AsyncMock`. El singleton `_client` en `tools.py` se reemplaza via `@patch`.
 
 ## Licencia
 

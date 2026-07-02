@@ -2,8 +2,7 @@
 
 ## Project state
 
-Phases 0–2 complete: `src/config.py`, `src/middleware_client.py`, and `src/tools.py` exist. The following files are **not yet implemented**:
-- `src/multimodal.py`, `src/agent.py`, `src/bot.py`, `src/main.py`
+Proyecto en **v2**. El estado actual se mantiene en [`TASKS.md`](TASKS.md).
 
 Run: `python -m src.main` (module, not script — all intra-package imports use `from src.xxx`).
 
@@ -34,45 +33,41 @@ No lint / format / typecheck configured yet.
 
 ## Git workflow
 
-### Branches
+### Ramas por grupo de tareas
 
-- Al iniciar una tarea, crear una rama con el formato: `task/<NÚMERO>-<descripción-corta>` (ej: `task/1-telegram-bot`).
-- La rama se crea a partir de `master`.
-- Todas las implementaciones y commits de la tarea se hacen en esa rama.
+- Cada grupo v2 (V2-1, V2-2, V2-3) tiene su propia rama con formato:
+  `task/<grupo>-<descripción-corta>` (ej: `task/v2-1-crud`)
+- Antes de empezar a trabajar:
+  1. Verificar si la rama del grupo ya existe (`git branch -a | grep <rama>`)
+  2. Si existe → `git checkout <rama>`
+  3. Si no existe → `git checkout -b <rama> master`
+- Todas las tareas del grupo se implementan y commitean en esa rama.
 
 ### Commits
 
-Después de implementar una tarea:
-1. Actualizar `TASKS.md` (marcar checkboxes y actualizar conteos).
-2. Hacer commit en la rama de la tarea. El agente **no debe commitear** hasta que el usuario haya probado y dado su aprobación explícita.
-3. Una vez que el usuario confirma que las pruebas pasan y dice **"haz commit"** o **"commit"**, el agente ejecuta:
+1. Marcar la tarea completada en `TASKS.md`.
+2. El agente **no debe commitear** hasta que el usuario haya probado y dé aprobación explícita.
+3. Una vez aprobado:
    ```
-   git add -A && git commit -m "..."
+   git add -A && git commit -m "feat: <descripción corta>" -m "<descripción detallada>"
+   git push origin <rama-actual>
    ```
+4. Siempre que se haga un commit, se debe hacer `push` a la rama.
 
 Convención de commits:
 ```
-git add -A && git commit -m "feat: <descripción corta>
+feat: <resumen conciso (máx 72 caracteres)>
 
-<descripción detallada de qué se hizo y por qué>"
+<descripción detallada del cambio, en español o inglés>
 ```
 
-- Primera línea: prefijo `feat:` + resumen conciso (máx 72 caracteres).
-- Línea en blanco, luego una descripción más larga explicando el cambio.
-- La descripción debe estar en español o inglés, según el resto del proyecto.
-- Ejemplo:
+### Pull Request al completar un grupo
+
+- Al completar la **última tarea de un grupo**, crear un PR a `master`:
   ```
-  feat: implement Telegram bot connection
-
-  Se agregó la conexión inicial con el bot de Telegram usando python-telegram-bot.
-  Incluye manejo de comandos /start y /help.
+  gh pr create --base master --head <rama> --title "feat(v2): <descripción del grupo>" --body "<lista de tareas incluidas>"
   ```
-
-### Merge a master
-
-Una vez que el usuario dice que la tarea está completa:
-- El agente hace merge de la rama de la tarea a `master`.
-- Luego elimina la rama de la tarea (local y remota si existe).
+- No hacer merge del PR hasta que el usuario lo autorice.
 
 ## Docker
 

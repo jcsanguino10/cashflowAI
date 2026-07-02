@@ -5,7 +5,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import END, StateGraph
 from langgraph.prebuilt import ToolNode
-from src.schemas.multimodal import AgentState
+from src.schemas.agent import AgentState
 
 from src.config import config
 from src.multimodal import get_processor
