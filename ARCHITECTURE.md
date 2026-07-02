@@ -1,7 +1,5 @@
 # AI Personal Finance — Architecture
 
-> Documentación técnica para el agente que programa. Para una visión general del proyecto ver [`README.md`](README.md).
-
 ---
 
 ## Project Structure
