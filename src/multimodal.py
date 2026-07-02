@@ -1,65 +1,12 @@
 import base64
-from typing import Optional
 
 from langchain_core.messages import HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
-from pydantic import BaseModel
 
 from src.config import config
+from src.prompts.multimodal import _RECEIPT_PROMPT, _STATEMENT_PROMPT, _TRANSCRIBE_PROMPT
+from src.schemas.multimodal import BankStatement, Receipt
 
-
-# ---------------------------------------------------------------------------
-# Structured output schemas
-# ---------------------------------------------------------------------------
-
-
-class ReceiptItem(BaseModel):
-    name: str
-    amount: float
-    category: Optional[str] = None
-
-
-class Receipt(BaseModel):
-    store: str
-    date: str
-    total: float
-    currency: str = "EUR"
-    items: list[ReceiptItem]
-    payment_method: Optional[str] = None
-
-
-class BankTx(BaseModel):
-    date: str
-    description: str
-    amount: float
-    category: Optional[str] = None
-
-
-class BankStatement(BaseModel):
-    transactions: list[BankTx]
-
-
-# ---------------------------------------------------------------------------
-# Prompts
-# ---------------------------------------------------------------------------
-
-_TRANSCRIBE_PROMPT = (
-    "Transcribe el siguiente mensaje de voz sobre finanzas personales "
-    "al español. Devuelve SOLO el texto transcrito, sin explicaciones."
-)
-
-_RECEIPT_PROMPT = "Extrae los datos de este recibo de compra."
-
-_STATEMENT_PROMPT = (
-    "Extrae todas las transacciones de este extracto bancario. "
-    "Los gastos son cantidades negativas, los ingresos son positivas.\n\n"
-    "Clasifica cada transacción en una categoría (como 'Alimentación', "
-    "'Transporte', 'Salario', 'Hipoteca', 'Subscripciones', "
-    "'Salud', 'Educación', 'Restaurante', 'Supermercado', "
-    "'Seguros', 'Ahorros', etc.) basándote en la descripción "
-    "o el nombre del beneficiario.\n\n"
-    "Devuelve SOLO las transacciones, sin resúmenes ni explicaciones adicionales."
-)
 
 # ---------------------------------------------------------------------------
 # MIME type mapping

@@ -4,6 +4,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
 from src.agent import agent
 from src.config import config
+from src.prompts.bot import HELP_MESSAGE, WELCOME_MESSAGE
 
 
 def _extract_text(content: str | list) -> str:
@@ -18,24 +19,11 @@ def _extract_text(content: str | list) -> str:
 
 
 async def start(update: Update, _context):
-    await update.message.reply_text(
-        "¡Hola! Soy tu asistente de finanzas personales.\n\n"
-        "Puedes enviarme:\n"
-        "• Mensajes de texto — ej. «Gasté 50€ en Netflix»\n"
-        "• Notas de voz — para registrar gastos hablando\n"
-        "• Fotos de recibos — para extraer los artículos\n"
-        "• Documentos — extractos bancarios en PDF\n\n"
-        "Usa /help para ver los comandos disponibles."
-    )
+    await update.message.reply_text(WELCOME_MESSAGE)
 
 
 async def help_command(update: Update, _context):
-    await update.message.reply_text(
-        "Comandos disponibles:\n"
-        "/start — Mensaje de bienvenida\n"
-        "/help — Esta ayuda\n\n"
-        "También puedes hablarme en lenguaje natural sobre tus finanzas."
-    )
+    await update.message.reply_text(HELP_MESSAGE)
 
 
 async def text_message(update: Update, _context):

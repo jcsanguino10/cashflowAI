@@ -37,12 +37,12 @@ ai-personal-finanza/
 │   ├── __init__.py
 │   ├── main.py                # Entry point — starts bot polling + agent
 │   ├── config.py              # Environment variable loading & validation
-│   ├── bot.py                 # Telegram bot handlers
+│   ├── bot.py                 # Telegram bot handlers (logic only)
 │   │                          #   - text: direct message
 │   │                          #   - voice: audio transcription via Gemini
 │   │                          #   - photo: receipt OCR via Gemini Vision
 │   │                          #   - document: PDF/bank statement parsing
-│   ├── agent.py               # LangGraph StateGraph definition
+│   ├── agent.py               # LangGraph StateGraph definition (logic only)
 │   │                          #   Node 1: multimodal_preprocessor
 │   │                          #   Node 2: financial_agent
 │   │                          #   Conditional edge: tool call or respond
@@ -51,14 +51,16 @@ ai-personal-finanza/
 │   │                          #   - get_accounts, get_balances, get_budget
 │   │                          #   - get_transactions, analyze_spending
 │   │                          #   - get_recommendations
-│   ├── multimodal.py          # Gemini multimodal preprocessing
-│   │                          #   - transcribe_audio()
-│   │                          #   - extract_receipt_items()
-│   │                          #   - parse_bank_statement()
-│   └── middleware_client.py   # HTTP client for actual-http-api
-│                              #   - Typed wrappers for each endpoint
-│                              #   - API Key authentication
-│                              #   - Amount conversion (euros ↔ cents)
+│   ├── multimodal.py          # MediaProcessor class (Gemini calls)
+│   ├── middleware_client.py   # HTTP client for actual-http-api
+│   ├── prompts/               # All prompt strings, separated from logic
+│   │   ├── __init__.py
+│   │   ├── multimodal.py      #   _TRANSCRIBE, _RECEIPT, _STATEMENT prompts
+│   │   ├── agent.py           #   _SYSTEM_PROMPT for the LLM agent
+│   │   └── bot.py             #   WELCOME_MESSAGE, HELP_MESSAGE
+│   └── schemas/               # Pydantic response schemas
+│       ├── __init__.py
+│       └── multimodal.py      #   ReceiptItem, Receipt, BankTx, BankStatement
 ├── tests/
 │   ├── __init__.py
 │   ├── conftest.py            # Shared fixtures (mock client, env vars)
@@ -165,7 +167,29 @@ class MediaProcessor:
         return strategies[media_type](media_data)
 ```
 
-### 5. Singleton Configuration
+### 5. Prompt / Schema Separation
+
+Prompts (LLM instructions) and schemas (structured output models) live in separate directories, decoupled from logic:
+
+```
+src/
+├── prompts/           # Pure prompt strings — no imports from logic
+│   ├── agent.py       #   _SYSTEM_PROMPT
+│   ├── bot.py         #   WELCOME_MESSAGE, HELP_MESSAGE
+│   └── multimodal.py  #   _TRANSCRIBE/RECEIPT/STATEMENT_PROMPT
+├── schemas/           # Pydantic models — no side effects
+│   └── multimodal.py  #   ReceiptItem, Receipt, BankTx, BankStatement
+├── agent.py           # Imports _SYSTEM_PROMPT from prompts/agent.py
+├── bot.py             # Imports WELCOME/HELP from prompts/bot.py
+└── multimodal.py      # Imports prompts and schemas from their packages
+```
+
+**Rationale**:
+- **Iteration speed**: editing a prompt never requires touching a logic file — reduces merge conflicts and accidental regressions.
+- **Testability**: prompts can be reviewed, versioned, or A/B tested independently.
+- **Single responsibility**: no file mixes LLM instructions with HTTP calls, graph definitions, or message handling.
+
+### 6. Singleton Configuration
 
 `config.py` loads environment variables once at startup and validates them eagerly, failing fast if anything is missing.
 
@@ -366,9 +390,20 @@ tests/
 
 ### Adding a new media type
 
-1. Add a new strategy method in `MediaProcessor`
-2. Register the handler in `bot.py`
-3. Add a new prompt to `multimodal.py`
+1. Add a new strategy method in `MediaProcessor` (`src/multimodal.py`)
+2. Define the structured output schema in `src/schemas/` (e.g. `schemas/multimodal.py`)
+3. Write the Gemini prompt in the corresponding `src/prompts/` file
+4. Register the handler in `src/bot.py`
+
+### Adding a new prompt type
+
+1. Add the prompt constant to the appropriate file under `src/prompts/`
+2. Import it from the logic file that needs it — no changes to the prompt file are required later
+
+### Adding a new structured output schema
+
+1. Define the Pydantic model in `src/schemas/` (create a new file or add to an existing one)
+2. Import and use it wherever the structured output is needed (e.g. `multimodal.py` with `with_structured_output(Schema)`)
 
 ### Adding persistence
 
