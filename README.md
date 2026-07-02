@@ -1,21 +1,21 @@
 # cashflowIA
 
-> Asistente de finanzas personales vía Telegram impulsado por inteligencia artificial.
+> AI-powered personal finance assistant via Telegram.
 
-cashflowIA te permite gestionar tu presupuesto en [Actual Budget](https://actualbudget.org/) directamente desde Telegram. Enviá mensajes de texto, notas de voz, fotos de tickets o estados de cuenta en PDF, y el agente con Gemini + LangGraph se encarga del resto.
+cashflowIA lets you manage your [Actual Budget](https://actualbudget.org/) directly from Telegram. Send text messages, voice notes, receipt photos, or PDF bank statements, and the Gemini + LangGraph agent handles the rest.
 
-## Stack tecnológico
+## Tech Stack
 
-| Capa | Tecnología |
+| Layer | Technology |
 |---|---|
-| Mensajería | [python-telegram-bot](https://python-telegram-bot.org/) |
-| Agente conversacional | [LangGraph](https://langchain-ai.github.io/langgraph/) (ReAct) |
-| Modelo de lenguaje | [Gemini](https://ai.google.dev/) via `langchain-google-genai` |
-| Middleware REST | [actual-http-api](https://hub.docker.com/r/jhonderson/actual-http-api) |
-| Motor financiero | [Actual Budget](https://actualbudget.org/) |
-| Contenedores | Docker + Docker Compose |
+| Messaging | [python-telegram-bot](https://python-telegram-bot.org/) |
+| Agent Framework | [LangGraph](https://langchain-ai.github.io/langgraph/) (ReAct) |
+| Language Model | [Gemini](https://ai.google.dev/) via `langchain-google-genai` |
+| REST Middleware | [actual-http-api](https://hub.docker.com/r/jhonderson/actual-http-api) |
+| Financial Engine | [Actual Budget](https://actualbudget.org/) |
+| Containerization | Docker + Docker Compose |
 
-## Arquitectura
+## Architecture
 
 ```
  ┌──────────┐    ┌──────────────────┐    ┌────────────────┐    ┌───────────────┐
@@ -31,118 +31,118 @@ cashflowIA te permite gestionar tu presupuesto en [Actual Budget](https://actual
                    └──────────────┘
 ```
 
-El bot de Telegram y el agente LangGraph se ejecutan en un mismo proceso Python. Tres servicios Docker orquestados con Docker Compose.
+The Telegram bot and LangGraph agent run in the same Python process. Three Docker services orchestrated with Docker Compose.
 
-## Requisitos previos
+## Prerequisites
 
-- Docker y Docker Compose instalados
-- Token de bot de Telegram (crealo con [@BotFather](https://t.me/BotFather))
-- API Key de Google Gemini (obtenela en [AI Studio](https://aistudio.google.com))
-- Sync ID de Actual Budget (Ajustes → Mostrar ajustes avanzados → Sync ID)
-- Contraseña del servidor Actual Budget
+- Docker and Docker Compose installed
+- Telegram bot token (create one with [@BotFather](https://t.me/BotFather))
+- Google Gemini API key (get one at [AI Studio](https://aistudio.google.com))
+- Actual Budget Sync ID (Settings → Show advanced settings → Sync ID)
+- Actual Budget server password
 
-## Configuración rápida
+## Quick Start
 
 ```bash
 cp .env.example .env
-# Completar las variables con tus credenciales
+# Fill in your credentials
 docker compose up --build
 ```
 
-### Variables de entorno
+### Environment Variables
 
-| Variable | Descripción |
+| Variable | Description |
 |---|---|
-| `ACTUAL_PASSWORD` | Contraseña del servidor Actual Budget |
-| `BUDGET_SYNC_ID` | Identificador de sincronización del presupuesto |
-| `MIDDLEWARE_API_KEY` | Clave API para el middleware actual-http-api |
-| `TELEGRAM_TOKEN` | Token del bot de Telegram |
-| `GEMINI_API_KEY` | Clave API de Google Gemini |
+| `ACTUAL_PASSWORD` | Actual Budget server password |
+| `BUDGET_SYNC_ID` | Budget synchronization identifier |
+| `MIDDLEWARE_API_KEY` | API key for the actual-http-api middleware |
+| `TELEGRAM_TOKEN` | Telegram bot token |
+| `GEMINI_API_KEY` | Google Gemini API key |
 
-### Servicios Docker
+### Docker Services
 
-El archivo `docker-compose.yml` define tres servicios:
+The `docker-compose.yml` file defines three services:
 
-| Servicio | Imagen | Puerto | Rol |
+| Service | Image | Port | Role |
 |---|---|---|---|
-| `actual-server` | `actualbudget/actual-server` | 5006 | Motor financiero (SQLite) |
-| `actual-http-api` | `jhonderson/actual-http-api` | 5007 | REST wrapper sobre el SDK de Actual Budget |
-| `app` | build desde `Dockerfile` | — | Bot de Telegram + Agente LangGraph |
+| `actual-server` | `actualbudget/actual-server` | 5006 | Financial engine (SQLite) |
+| `actual-http-api` | `jhonderson/actual-http-api` | 5007 | REST wrapper over Actual Budget SDK |
+| `app` | build from `Dockerfile` | — | Telegram bot + LangGraph agent |
 
-Las variables de entorno se inyectan desde el archivo `.env` en cada servicio según corresponda.
+Environment variables are injected from the `.env` file into each service as needed.
 
-## Cómo usarlo
+## Usage
 
-Una vez que el bot está corriendo, enviale mensajes desde Telegram:
+Once the bot is running, send messages from Telegram:
 
-| Tipo de entrada | Ejemplo | Procesamiento |
+| Input Type | Example | Processing |
 |---|---|---|
-| Texto | "Gasté €50 en Netflix ayer" | Análisis directo por Gemini |
-| Voz | Graba un mensaje de voz | Transcripción con Gemini, luego análisis |
-| Foto | Foto de un ticket | OCR con Gemini Vision, detección de items |
-| Documento | Estado de cuenta en PDF | Parseo de transacciones con Gemini |
+| Text | "I spent €50 on Netflix yesterday" | Direct Gemini analysis |
+| Voice | Record a voice message | Transcription via Gemini, then analysis |
+| Photo | Receipt photo | OCR via Gemini Vision, item detection |
+| Document | Bank statement PDF | Transaction parsing via Gemini |
 
-También podés hacer consultas como:
+You can also ask questions like:
 
-- "¿Cuánto gasté este mes?"
-- "¿Cómo voy con el presupuesto de supermercado?"
-- "Mostrame el saldo de todas mis cuentas"
+- "How much did I spend this month?"
+- "How's my grocery budget looking?"
+- "Show me the balance of all my accounts"
 
-## Estructura del proyecto
+## Project Structure
 
 ```
 cashflowIA/
 ├── src/
-│   ├── main.py                # Punto de entrada
-│   ├── config.py              # Configuración desde variables de entorno
-│   ├── bot.py                 # Handlers del bot de Telegram
-│   ├── agent.py               # Grafo de estado con LangGraph
-│   ├── tools.py               # Herramientas del agente financiero
-│   ├── multimodal.py          # Procesamiento de audio, imágenes y PDFs
-│   ├── middleware_client.py   # Cliente HTTP para actual-http-api
-│   ├── prompts/               # Prompts del LLM separados por módulo
+│   ├── main.py                # Entry point
+│   ├── config.py              # Environment variable loading
+│   ├── bot.py                 # Telegram bot handlers
+│   ├── agent.py               # LangGraph state graph
+│   ├── tools.py               # Agent financial tools
+│   ├── multimodal.py          # Audio, image and PDF processing
+│   ├── middleware_client.py   # HTTP client for actual-http-api
+│   ├── prompts/               # LLM prompts separated by module
 │   │   ├── agent.py
 │   │   ├── bot.py
 │   │   └── multimodal.py
-│   └── schemas/               # Modelos Pydantic para salidas estructuradas
+│   └── schemas/               # Pydantic models for structured output
 │       ├── agent.py
 │       └── multimodal.py
 ├── tests/
-│   ├── conftest.py            # Fixtures compartidos (mocks, env vars)
-│   └── test_tools.py          # Tests para herramientas del agente
-├── docker-compose.yml         # Orquestación de servicios
-├── Dockerfile                 # Imagen de la aplicación
-├── Dockerfile.test            # Imagen para ejecutar tests
-├── .env.example               # Plantilla de configuración
+│   ├── conftest.py            # Shared fixtures (mocks, env vars)
+│   └── test_tools.py          # Tests for agent tools
+├── docker-compose.yml         # Service orchestration
+├── Dockerfile                 # Application image
+├── Dockerfile.test            # Test image
+├── .env.example               # Configuration template
 ├── .gitignore
-├── AGENTS.md                  # Guía para el agente que programa
-├── ARCHITECTURE.md            # Documentación técnica detallada
-├── TASKS.md                   # Seguimiento de tareas del proyecto
-└── LICENSE                    # Términos de uso
+├── AGENTS.md                  # Guide for the AI coding agent
+├── ARCHITECTURE.md            # Detailed technical documentation
+├── TASKS.md                   # Task tracking
+└── LICENSE                    # Terms of use
 ```
 
-## Estado del proyecto
+## Project Status
 
-Actualmente en desarrollo activo. Consultá [`TASKS.md`](TASKS.md) para conocer el detalle de tareas pendientes y completadas.
+Currently under active development. See [`TASKS.md`](TASKS.md) for details on pending and completed tasks.
 
 ## Tests
 
-Los tests se ejecutan dentro de un contenedor Docker para evitar conflictos de dependencias locales:
+Tests run inside a Docker container to avoid local dependency conflicts:
 
 ```bash
 docker build -f Dockerfile.test -t app-test . && docker run --rm app-test
 ```
 
-Estructura:
-- `tests/conftest.py` — fixtures compartidos (mock de `ActualClient`, variables de entorno)
-- `tests/test_tools.py` — tests para las herramientas del agente
+Structure:
+- `tests/conftest.py` — shared fixtures (mocked `ActualClient`, env vars)
+- `tests/test_tools.py` — tests for agent tools
 
-El cliente HTTP (`ActualClient`) se mockea con `unittest.mock.MagicMock` y sus métodos async con `AsyncMock`. El singleton `_client` en `tools.py` se reemplaza via `@patch`.
+The HTTP client (`ActualClient`) is mocked with `unittest.mock.MagicMock` and its async methods with `AsyncMock`. The `_client` singleton in `tools.py` is replaced via `@patch`.
 
-## Licencia
+## License
 
-Este proyecto se distribuye bajo **Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)**.
+This project is distributed under **Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)**.
 
-Podés usar, compartir y modificar el código libremente siempre que sea para fines no comerciales y otorgues la atribución correspondiente. No está permitido su uso con fines comerciales.
+You are free to use, share, and modify the code for non-commercial purposes, provided you give appropriate attribution. Commercial use is not permitted.
 
-Ver el archivo [`LICENSE`](LICENSE) para más detalles.
+See the [`LICENSE`](LICENSE) file for details.
