@@ -1,11 +1,11 @@
-from typing import Annotated, Any, Literal, Optional, TypedDict
 
+from typing import Any, Literal
 from google.genai.types import AutomaticFunctionCallingConfig
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import END, StateGraph
-from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
+from src.schemas.multimodal import AgentState
 
 from src.config import config
 from src.multimodal import get_processor
@@ -25,16 +25,6 @@ from src.tools import (
     get_recommendations,
     get_transactions,
 )
-
-# ---------------------------------------------------------------------------
-# State
-# ---------------------------------------------------------------------------
-
-
-class AgentState(TypedDict):
-    messages: Annotated[list[BaseMessage], add_messages]
-    media: Optional[dict[str, Any]]
-    media_output: Optional[str]
 
 
 # ---------------------------------------------------------------------------
